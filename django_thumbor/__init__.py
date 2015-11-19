@@ -30,12 +30,12 @@ def _remove_schema(url):
     :param url: The URL to remove the schema from
     :return: The schemaless URL
     """
-    return _remove_prefix(url, ['http://', 'https://'])
+    return _remove_prefix(url, ('http://', 'https://'))
 
 
 def _prepend_media_url(url):
     if url.startswith(settings.MEDIA_URL):
-        url = _remove_prefix(url, settings.MEDIA_URL)
+        url = _remove_prefix(url, (settings.MEDIA_URL, ))
         url.lstrip('/')
         return '%s/%s' % (conf.THUMBOR_MEDIA_URL, url)
     return url

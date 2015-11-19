@@ -3,6 +3,7 @@
 import imp
 from mock import patch
 from unittest import TestCase
+from django.conf import settings
 from django.test.utils import override_settings
 from django_thumbor import generate_url, conf
 
@@ -34,7 +35,7 @@ class TestGenerateURL(TestCase):
 
     def test_should_return_the_result(self):
         encrypted_url = 'encrypted-url.jpg'
-        encrypted_url_with_host = 'http://localhost:8888/encrypted-url.jpg'
+        encrypted_url_with_host = 'http://thumbor-server:8888/encrypted-url.jpg'
 
         with patch('django_thumbor.crypto.generate') as mock:
             mock.return_value = encrypted_url
@@ -82,28 +83,57 @@ class TestGenerateURL(TestCase):
             mock.assert_called_with(image_url=self.url, smart=False)
 
 
-class TestURLFixing(TestCase):
+class URLTestMixin(object):
 
     def assertURLEquals(self, original, expected, **kwargs):
         with patch('django_thumbor.crypto.generate') as mock:
             generate_url(original, **kwargs)
             mock.assert_called_with(image_url=expected)
 
+
+class TestURLFixing(TestCase, URLTestMixin):
+
+    def setUp(self):
+        self.expect_url = 'localhost:8000/media/uploads/image.jpg'
+
     def test_should_prepend_the_domain_to_media_url_images(self):
-        self.assertURLEquals('/media/uploads/image.jpg',
-                             'localhost:8000/media/uploads/image.jpg')
+        self.assertURLEquals('/media/uploads/image.jpg', self.expect_url)
 
     def test_should_prepend_the_domain_to_media_url_without_scheme(self):
-        self.assertURLEquals('/media/uploads/image.jpg',
-                             'localhost:8000/media/uploads/image.jpg')
+        # Incorrect assumption here that we would be setting MEDIA_URL to https://somedomain.com/media/
+        self.assertURLEquals('/media/uploads/image.jpg', self.expect_url)
 
     def test_should_remove_http_scheme_from_media_url_images(self):
-        self.assertURLEquals('http://localhost:8000/media/uploads/image.jpg',
-                             'localhost:8000/media/uploads/image.jpg')
+        self.assertURLEquals('http://localhost:8000/media/uploads/image.jpg', self.expect_url)
 
     def test_should_remove_https_scheme_from_media_url_images(self):
-        self.assertURLEquals('https://localhost:8000/media/uploads/image.jpg',
-                             'localhost:8000/media/uploads/image.jpg')
+        self.assertURLEquals('https://localhost:8000/media/uploads/image.jpg', self.expect_url)
+
+    def test_should_remove_http_scheme_from_external_images(self):
+        self.assertURLEquals('http://some.domain.com/path/image.jpg',
+                             'some.domain.com/path/image.jpg')
+
+    def test_should_remove_https_scheme_from_external_images(self):
+        self.assertURLEquals('https://some.domain.com/path/image.jpg',
+                             'some.domain.com/path/image.jpg')
+
+
+class TestURLFixingHttpsMediaUrl(TestCase, URLTestMixin):
+
+    def setUp(self):
+        settings.MEDIA_URL = 'https://img.amazon.com/media/'
+        settings.THUMBOR_MEDIA_URL = 'https://img.amazon.com/media/'
+        self.expect_url = 'img.amazon.com/media/uploads/image.jpg'
+        reload(conf)
+
+    def test_should_prepend_the_domain_to_media_url_images(self):
+        self.assertURLEquals('https://img.amazon.com/media/uploads/image.jpg', self.expect_url)
+
+    def test_should_remove_http_scheme_from_media_url_images(self):
+        self.assertURLEquals('http://img.amazon.com/media/uploads/image.jpg', self.expect_url)
+
+    def test_should_remove_https_scheme_from_media_url_images(self):
+        self.assertURLEquals('https://img.amazon.com/media/uploads/image.jpg', self.expect_url)
 
     def test_should_remove_http_scheme_from_external_images(self):
         self.assertURLEquals('http://some.domain.com/path/image.jpg',
