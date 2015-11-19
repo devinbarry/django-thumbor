@@ -93,6 +93,22 @@ class TestURLFixing(TestCase):
         self.assertURLEquals('/media/uploads/image.jpg',
                              'localhost:8000/media/uploads/image.jpg')
 
-    def test_should_remove_the_scheme_from_external_images(self):
+    def test_should_prepend_the_domain_to_media_url_without_scheme(self):
+        self.assertURLEquals('/media/uploads/image.jpg',
+                             'localhost:8000/media/uploads/image.jpg')
+
+    def test_should_remove_http_scheme_from_media_url_images(self):
+        self.assertURLEquals('http://localhost:8000/media/uploads/image.jpg',
+                             'localhost:8000/media/uploads/image.jpg')
+
+    def test_should_remove_https_scheme_from_media_url_images(self):
+        self.assertURLEquals('https://localhost:8000/media/uploads/image.jpg',
+                             'localhost:8000/media/uploads/image.jpg')
+
+    def test_should_remove_http_scheme_from_external_images(self):
         self.assertURLEquals('http://some.domain.com/path/image.jpg',
+                             'some.domain.com/path/image.jpg')
+
+    def test_should_remove_https_scheme_from_external_images(self):
+        self.assertURLEquals('https://some.domain.com/path/image.jpg',
                              'some.domain.com/path/image.jpg')
