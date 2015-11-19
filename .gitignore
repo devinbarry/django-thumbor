@@ -5,3 +5,6 @@
 dist/
 django_thumbor.egg-info/
 docs/_build
+
+# Ignore PyCharm files
+.idea/
