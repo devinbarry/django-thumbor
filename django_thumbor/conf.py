@@ -4,7 +4,7 @@ from django.conf import settings
 
 # The host serving the thumbor resized images
 THUMBOR_SERVER = getattr(settings, 'THUMBOR_SERVER',
-                         'http://localhost:8888').rstrip('/')
+                         'http://thumbor-server:8888').rstrip('/')
 
 # The prefix for the host serving the original images
 # This must be a resolvable address to allow thumbor to reach the images
